@@ -1,4 +1,6 @@
 import os
+import threading
+from flask import Flask
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pymongo import MongoClient
@@ -11,17 +13,35 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 MONGO_URL = os.environ.get("MONGO_URL")
 
 GROUP_ID = -1001551886347  # 👈 Apna group id yaha daalo
-FORCE_CHANNEL = "https://t.me/freindboss"  # 👈 Apna group link
+FORCE_LINK = "https://t.me/freindboss"  # 👈 Apna group link
 
 # ============================================
 
-app = Client("member-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# ================== FLASK WEB SERVER ==================
+
+web_app = Flask(__name__)
+
+@web_app.route("/")
+def home():
+    return "Bot & Website Running Successfully!"
+
+def run_web():
+    web_app.run(host="0.0.0.0", port=8000)
+
+# ================== TELEGRAM BOT ==================
+
+app = Client(
+    "member-bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
+)
 
 mongo = MongoClient(MONGO_URL)
 db = mongo["InviteBot"]
 users = db["users"]
 
-# ================== CHECK INVITE ==================
+# ================== DATABASE FUNCTIONS ==================
 
 async def get_invite_count(user_id):
     data = users.find_one({"user_id": user_id})
@@ -44,8 +64,10 @@ async def group_filter(client, message):
     if message.chat.id != GROUP_ID:
         return
 
-    user_id = message.from_user.id
+    if not message.from_user:
+        return
 
+    user_id = message.from_user.id
     invite_count = await get_invite_count(user_id)
 
     if invite_count < 5:
@@ -56,11 +78,11 @@ async def group_filter(client, message):
 
         buttons = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("📤 Share Link 1", url=FORCE_CHANNEL)],
-                [InlineKeyboardButton("📤 Share Link 2", url=FORCE_CHANNEL)],
-                [InlineKeyboardButton("📤 Share Link 3", url=FORCE_CHANNEL)],
-                [InlineKeyboardButton("📤 Share Link 4", url=FORCE_CHANNEL)],
-                [InlineKeyboardButton("📤 Share Link 5", url=FORCE_CHANNEL)],
+                [InlineKeyboardButton("📤 Share Link 1", url=FORCE_LINK)],
+                [InlineKeyboardButton("📤 Share Link 2", url=FORCE_LINK)],
+                [InlineKeyboardButton("📤 Share Link 3", url=FORCE_LINK)],
+                [InlineKeyboardButton("📤 Share Link 4", url=FORCE_LINK)],
+                [InlineKeyboardButton("📤 Share Link 5", url=FORCE_LINK)],
             ]
         )
 
@@ -79,6 +101,12 @@ async def start_cmd(client, message):
         "Group me message bhejne ke liye 5 members invite karo."
     )
 
-# ================== RUN ==================
+# ================== RUN BOTH ==================
 
-app.run()
+def run_bot():
+    app.run()
+
+if __name__ == "__main__":
+    t1 = threading.Thread(target=run_web)
+    t1.start()
+    run_bot()
