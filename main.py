@@ -4,6 +4,7 @@ from flask import Flask
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pymongo import MongoClient
+from urllib.parse import quote
 
 # ================== CONFIG ==================
 
@@ -12,7 +13,7 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 MONGO_URL = os.environ.get("MONGO_URL")
 
-GROUP_ID = -1001551886347  # 👈 Apna group id yaha daalo
+GROUP_ID = -1001234567890  # 👈 Apna group id yaha daalo
 FORCE_LINK = "https://t.me/freindboss"  # 👈 Apna group link
 
 # ============================================
@@ -41,7 +42,7 @@ mongo = MongoClient(MONGO_URL)
 db = mongo["InviteBot"]
 users = db["users"]
 
-# ================== DATABASE FUNCTIONS ==================
+# ================== DATABASE FUNCTION ==================
 
 async def get_invite_count(user_id):
     data = users.find_one({"user_id": user_id})
@@ -49,14 +50,7 @@ async def get_invite_count(user_id):
         return data.get("invite", 0)
     return 0
 
-async def add_invite(user_id):
-    users.update_one(
-        {"user_id": user_id},
-        {"$inc": {"invite": 1}},
-        upsert=True
-    )
-
-# ================== GROUP MESSAGE FILTER ==================
+# ================== GROUP FILTER ==================
 
 @app.on_message(filters.group & filters.text)
 async def group_filter(client, message):
@@ -76,18 +70,27 @@ async def group_filter(client, message):
         except:
             pass
 
+        # 👇 Username mention logic
+        if message.from_user.username:
+            user_mention = f"@{message.from_user.username}"
+        else:
+            user_mention = message.from_user.first_name
+
+        share_text = quote("Join this group now 👇")
+        share_url = f"https://t.me/share/url?url={FORCE_LINK}&text={share_text}"
+
         buttons = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("📤 Share Link 1", url=FORCE_LINK)],
-                [InlineKeyboardButton("📤 Share Link 2", url=FORCE_LINK)],
-                [InlineKeyboardButton("📤 Share Link 3", url=FORCE_LINK)],
-                [InlineKeyboardButton("📤 Share Link 4", url=FORCE_LINK)],
-                [InlineKeyboardButton("📤 Share Link 5", url=FORCE_LINK)],
+                [InlineKeyboardButton("📤 Share Link 1", url=share_url)],
+                [InlineKeyboardButton("📤 Share Link 2", url=share_url)],
+                [InlineKeyboardButton("📤 Share Link 3", url=share_url)],
+                [InlineKeyboardButton("📤 Share Link 4", url=share_url)],
+                [InlineKeyboardButton("📤 Share Link 5", url=share_url)],
             ]
         )
 
         await message.reply_text(
-            "❌ Is group pe aap SMS nahi kar sakte ho\n\n"
+            f"❌ {user_mention} Is group pe aap SMS nahi kar sakte ho\n\n"
             "👉 Aapko pehle 5 member ko group ka link share karna hoga.",
             reply_markup=buttons
         )
