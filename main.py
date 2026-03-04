@@ -10,8 +10,8 @@ API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 MONGO_URL = os.environ.get("MONGO_URL")
 
-GROUP_ID = -1001234567890  # 👈 Apna group id yaha daalo
-FORCE_CHANNEL = "https://t.me/YourGroupLink"  # 👈 Apna group link
+GROUP_ID = -1001551886347  # 👈 Apna group id yaha daalo
+FORCE_CHANNEL = "https://t.me/freindboss"  # 👈 Apna group link
 
 # ============================================
 
